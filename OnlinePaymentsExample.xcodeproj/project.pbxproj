@@ -586,7 +586,7 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		BF7E305C2B73B543007FF200 /* XCRemoteSwiftPackageReference "sdk-client-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/wl-online-payments-direct/sdk-client-swift";
+			repositoryURL = "https://github.com/online-payments/sdk-client-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.2.1;
