@@ -8,8 +8,7 @@ import UIKit
 import OnlinePaymentsKit
 
 struct AppConstants {
-    static let sdkBundle = Bundle(path: SDKConstants.kSDKBundlePath!)!
-    static let applicationIdentifier = "SwiftUI Example Application/v1.0.2"
+    static let applicationIdentifier = "SwiftUI Example Application/v1.0.3"
 
     // Constants used for saving input to UserDefaults
     static let clientSessionId = "ClientSessionId"

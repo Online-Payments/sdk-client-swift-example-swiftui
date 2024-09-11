@@ -457,18 +457,7 @@ extension CardProductScreen {
                     case .supported:
                         self.switchToPaymentProduct(paymentProductId: iinDetailsResponse.paymentProductId)
                     case .existingButNotAllowed:
-                        self.cardError =
-                            NSLocalizedString(
-                                "gc.general.paymentProductFields.validationErrors.allowedInContext.label",
-                                tableName: SDKConstants.kSDKLocalizable,
-                                bundle: AppConstants.sdkBundle,
-                                value: "",
-                                comment:
-                                    """
-                                    The card you entered is not supported.
-                                    Please enter another card or try another payment method.
-                                    """
-                            )
+                        self.cardError = "ValidationErrors.allowedInContext".localized
                     default:
                         self.showAlert(text: "IINUnknown".localized)
                     }

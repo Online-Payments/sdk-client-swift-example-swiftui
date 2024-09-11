@@ -77,6 +77,27 @@
 "NavigateToEndScreenErrorMessage" = "Something went wrong when navigating to the End Screen. Please try again.";
 "InvalidValidationError" = "Invalid validation error";
 
+// MARK: Validation error messages
+"ValidationErrors.allowedInContext" = "The card you entered is not supported. Please enter another card or try another payment method.";
+"ValidationErrors.cardholderName" = "Please provide the name as exactly written on your card";
+"ValidationErrors.emailAddress" = "Please provide a valid email address";
+"ValidationErrors.expirationDate" = "Please provide a valid expiration date";
+"ValidationErrors.fixedList" = "Please select one of the values from the list";
+"ValidationErrors.iban" = "Please enter a valid IBAN";
+"ValidationErrors.iin" = "Please provide a valid card number";
+"ValidationErrors.invalidContent" = "Please provide a value of the correct format";
+"ValidationErrors.length.between" = "Please provide a value between {minLength} and {maxLength} characters";
+"ValidationErrors.length.exact" = "Please provide a value of exactly {maxLength} characters";
+"ValidationErrors.length" = "Please provide a value of maximum of {maxLength} characters";
+"ValidationErrors.length.max" = "Please provide a value of maximum of {maxLength} characters";
+"ValidationErrors.luhn" = "Please provide a valid card number";
+"ValidationErrors.range" = "Please provide a value between {minValue} and {maxValue}";
+"ValidationErrors.regularExpression" = "Please provide a value of the correct format";
+"ValidationErrors.required" = "Please provide a value";
+"ValidationErrors.residentIdName" = "Please provide the exact name as written on your Resident Identity Card";
+"ValidationErrors.residentIdNumber" = "Please provide the exact number as written on your Resident Identity Card";
+"ValidationErrors.termsAndConditions" = "Please accept the terms and conditions";
+
 // MARK: Header
 "SecurePayment" = "Secure payment";
 

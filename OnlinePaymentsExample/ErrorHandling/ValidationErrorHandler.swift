@@ -8,7 +8,7 @@ import Foundation
 import OnlinePaymentsKit
 
 struct ValidationErrorHandler {
-    static let errorMessageFormat = "gc.general.paymentProductFields.validationErrors.%@.label"
+    static let errorMessageFormat = "ValidationErrors.%@"
 
     static func errorMessage(for error: ValidationError, withCurrency: Bool) -> String {
         let errorClass = error.self
@@ -20,15 +20,7 @@ struct ValidationErrorHandler {
 
         } else if !errorClass.errorMessage.isEmpty {
             let errorMessageKey = String(format: errorMessageFormat, errorClass.errorMessage)
-            let errorMessageValue =
-                NSLocalizedString(
-                    errorMessageKey,
-                    tableName: SDKConstants.kSDKLocalizable,
-                    bundle: AppConstants.sdkBundle,
-                    value: "",
-                    comment: ""
-                )
-            errorMessage = errorMessageValue
+            errorMessage = errorMessageKey.localized
         } else {
             errorMessage = ""
             NSException(
@@ -55,14 +47,7 @@ struct ValidationErrorHandler {
             errorMessageKey = ""
         }
 
-        let errorMessageValueWithPlaceholders =
-            NSLocalizedString(
-                errorMessageKey,
-                tableName: SDKConstants.kSDKLocalizable,
-                bundle: AppConstants.sdkBundle,
-                value: "",
-                comment: ""
-            )
+        let errorMessageValueWithPlaceholders = errorMessageKey.localized
         let errorMessageValueWithPlaceholder =
             errorMessageValueWithPlaceholders.replacingOccurrences(
                 of: "{maxLength}",
@@ -76,14 +61,8 @@ struct ValidationErrorHandler {
 
     private static func validationErrorRange(rangeError: ValidationErrorRange, withCurrency: Bool) -> String {
         let errorMessageKey = String(format: errorMessageFormat, "length.between")
-        let errorMessageValueWithPlaceholders =
-            NSLocalizedString(
-                errorMessageKey,
-                tableName: SDKConstants.kSDKLocalizable,
-                bundle: AppConstants.sdkBundle,
-                value: "",
-                comment: ""
-            )
+        let errorMessageValueWithPlaceholders = errorMessageKey.localized
+
         var minString = ""
         var maxString = ""
         if withCurrency {

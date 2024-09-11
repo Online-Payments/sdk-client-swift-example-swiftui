@@ -588,7 +588,7 @@
 			repositoryURL = "https://github.com/online-payments/sdk-client-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.4.0;
+				minimumVersion = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
