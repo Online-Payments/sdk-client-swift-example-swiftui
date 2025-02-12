@@ -47,7 +47,7 @@ struct CardProductScreen: View {
                                                  trailingImage:
                                     .image(
                                         Image(
-                                            uiImage: viewModel.paymentItem?.displayHintsList[0].logoImage ??
+                                            uiImage: viewModel.paymentItem?.displayHints[0].logoImage ??
                                             UIImage()
                                         )
                                     ),

@@ -137,46 +137,51 @@ struct ProductTextFieldView: View {
 
 // MARK: - Previews
 #Preview("FieldWithPlaceholder") {
-    ProductTextFieldView(leadingImage: Image(systemName: "creditcard"),
-                         placeholder: "***** ****",
-                         text: .constant(""),
-                         errorText: nil,
-                         onEditingChanged: { _ in }, onCommit: {})
-        .previewLayout(.sizeThatFits)
+    ProductTextFieldView(
+        leadingImage: Image(systemName: "creditcard"),
+        placeholder: "***** ****",
+        text: .constant(""),
+        errorText: nil,
+        onEditingChanged: { _ in }, onCommit: {}
+    )
 }
 
 #Preview("FieldWithText") {
-    ProductTextFieldView(leadingImage: Image(systemName: "creditcard"),
-                         text: .constant("12345"),
-                         errorText: nil,
-                         onEditingChanged: { _ in }, onCommit: {})
-        .previewLayout(.sizeThatFits)
+    ProductTextFieldView(
+        leadingImage: Image(systemName: "creditcard"),
+        text: .constant("12345"),
+        errorText: nil,
+        onEditingChanged: { _ in }, onCommit: {}
+    )
 }
 
 #Preview("FieldWithTextAndError") {
-    ProductTextFieldView(leadingImage: Image(systemName: "creditcard"),
-                         text: .constant("******"),
-                         errorText: "Error message",
-                         onEditingChanged: { _ in }, onCommit: {})
-        .previewLayout(.sizeThatFits)
+    ProductTextFieldView(
+        leadingImage: Image(systemName: "creditcard"),
+        text: .constant("******"),
+        errorText: "Error message",
+        onEditingChanged: { _ in }, onCommit: {}
+    )
 }
 
 #Preview("FieldWithTextAndErrorDarkMode") {
-    ProductTextFieldView(leadingImage: Image(systemName: "creditcard"),
-                         text: .constant("******"),
-                         errorText: "Error message",
-                         onEditingChanged: { _ in }, onCommit: {})
-        .previewLayout(.sizeThatFits)
-        .preferredColorScheme(.dark)
+    ProductTextFieldView(
+        leadingImage: Image(systemName: "creditcard"),
+        text: .constant("******"),
+        errorText: "Error message",
+        onEditingChanged: { _ in }, onCommit: {}
+    )
+    .preferredColorScheme(.dark)
 }
 
 #Preview("FieldWithTextAndLongError") {
-    ProductTextFieldView(leadingImage: Image(systemName: "creditcard"),
-                     text: .constant("******"),
-                     errorText: """
-                        This is a long error message that will be spread over multiple lines.
-                        This is a long error message that will be spread over multiple lines.
-                     """,
-                     onEditingChanged: { _ in }, onCommit: {})
-        .previewLayout(.sizeThatFits)
+    ProductTextFieldView(
+        leadingImage: Image(systemName: "creditcard"),
+        text: .constant("******"),
+        errorText: """
+            This is a long error message that will be spread over multiple lines.
+            This is a long error message that will be spread over multiple lines.
+        """,
+        onEditingChanged: { _ in }, onCommit: {}
+    )
 }

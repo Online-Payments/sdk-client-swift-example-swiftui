@@ -70,7 +70,7 @@ struct BottomSheetView<Content: View>: View {
                 .frame(height: self.height - min(self.draggedOffset*2, 0))
                 .background(self.contentBackgroundColor)
                 .cornerRadius(self.topBarCornerRadius, corners: [.topLeft, .topRight])
-                .animation(.interactiveSpring())
+                .animation(.interactiveSpring(), value: self.isPresented)
                 .offset(y:
                     self.isPresented ?
                     (geometry.size.height/2 - self.height/2 + geometry.safeAreaInsets.bottom + self.draggedOffset) :
@@ -85,7 +85,7 @@ struct BottomSheetView<Content: View>: View {
             .black
             .opacity(grayBackgroundOpacity)
             .edgesIgnoringSafeArea(.all)
-            .animation(.interactiveSpring())
+            .animation(.interactiveSpring(), value: self.isPresented)
             .onTapGesture { self.isPresented = false }
     }
 

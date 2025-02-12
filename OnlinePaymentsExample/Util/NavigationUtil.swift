@@ -8,14 +8,22 @@ import UIKit
 
 struct NavigationUtil {
     static func popToRootView() {
-        findNavigationController(
-            viewController:
-                UIApplication.shared.windows.filter { $0.isKeyWindow }.first?.rootViewController
-        )?.popToRootViewController(animated: true)
+        guard let keyWindow = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive })?
+                .windows
+                .first(where: { $0.isKeyWindow })
+        else {
+            return
+        }
+
+        findNavigationController(viewController: keyWindow.rootViewController)?
+            .popToRootViewController(animated: true)
     }
 
     static func findNavigationController(viewController: UIViewController?) -> UINavigationController? {
-        guard let viewController else {
+        guard let viewController
+        else {
             return nil
         }
 

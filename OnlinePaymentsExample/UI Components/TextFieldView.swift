@@ -121,7 +121,6 @@ struct TextFieldView: View {
         errorText: "Error message",
         isFocused: { _ in }
     )
-    .previewLayout(.sizeThatFits)
 }
 
 #Preview("SecureText") {
@@ -135,7 +134,6 @@ struct TextFieldView: View {
         autocapitalization: .none,
         keyboardType: .default
     )
-    .previewLayout(.sizeThatFits)
 }
 
 #Preview("SecureTextDarkMode") {
@@ -149,7 +147,6 @@ struct TextFieldView: View {
         autocapitalization: .none,
         keyboardType: .default
     )
-    .previewLayout(.sizeThatFits)
     .preferredColorScheme(.dark)
 }
 
@@ -161,5 +158,4 @@ struct TextFieldView: View {
         isSecureTextEntry: true,
         isFocused: { _ in }
     )
-    .previewLayout(.sizeThatFits)
 }

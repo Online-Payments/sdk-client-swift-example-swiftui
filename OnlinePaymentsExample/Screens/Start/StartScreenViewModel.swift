@@ -161,7 +161,6 @@ extension StartScreen {
 
             session?.paymentItems(
                 for: paymentContext,
-                groupPaymentProducts: false,
                 success: { paymentItems in
                     self.paymentItems = paymentItems
                     self.isLoading = false

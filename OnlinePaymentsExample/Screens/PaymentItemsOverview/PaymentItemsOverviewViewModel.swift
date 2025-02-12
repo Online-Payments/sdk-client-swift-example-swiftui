@@ -121,17 +121,18 @@ extension PaymentItemsOverviewScreen {
             var items: [PaymentProductRow] = []
 
             for paymentItem in paymentItems.paymentItems.sorted(by: { paymentItemA, paymentItemB in
-                return paymentItemA.displayHintsList[0].displayOrder <
-                    paymentItemB.displayHintsList[0].displayOrder
+                return paymentItemA.displayHints[0].displayOrder < paymentItemB.displayHints[0].displayOrder
             }) {
-                let paymentProductLabel = paymentItem.displayHintsList[0].label ?? "UnknownProductLabel".localized
-                let row = PaymentProductRow(name: paymentProductLabel,
-                                             accountOnFileIdentifier: "",
-                                             paymentProductIdentifier: paymentItem.identifier,
-                                             logo: paymentItem.displayHintsList[0].logoImage)
+                let paymentProductLabel = paymentItem.displayHints[0].label ?? "UnknownProductLabel".localized
+                let row = PaymentProductRow(
+                    name: paymentProductLabel,
+                    accountOnFileIdentifier: "",
+                    paymentProductIdentifier: paymentItem.identifier,
+                    logo: paymentItem.displayHints[0].logoImage
+                )
                 items.append(row)
-
             }
+
             return items
         }
 
@@ -145,20 +146,22 @@ extension PaymentItemsOverviewScreen {
                 let paymentItemA =
                     paymentItems.paymentItem(
                         withIdentifier: accountOnFileA.paymentProductIdentifier
-                    )?.displayHintsList[0].displayOrder ?? Int.max
+                    )?.displayHints[0].displayOrder ?? Int.max
                 let paymentItemB =
                     paymentItems.paymentItem(
                         withIdentifier: accountOnFileB.paymentProductIdentifier
-                    )?.displayHintsList[0].displayOrder ?? Int.max
+                    )?.displayHints[0].displayOrder ?? Int.max
 
                 return paymentItemA < paymentItemB
             }) {
 
                 if let product = paymentItems.paymentItem(withIdentifier: accountOnFile.paymentProductIdentifier) {
-                    let row = PaymentProductRow(name: accountOnFile.label,
-                                                 accountOnFileIdentifier: accountOnFile.identifier,
-                                                 paymentProductIdentifier: accountOnFile.paymentProductIdentifier,
-                                                 logo: product.displayHintsList[0].logoImage)
+                    let row = PaymentProductRow(
+                        name: accountOnFile.label,
+                        accountOnFileIdentifier: accountOnFile.identifier,
+                        paymentProductIdentifier: accountOnFile.paymentProductIdentifier,
+                        logo: product.displayHints[0].logoImage
+                    )
                     items.append(row)
                 }
             }
