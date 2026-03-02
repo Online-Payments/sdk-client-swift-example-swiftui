@@ -8,7 +8,7 @@ import UIKit
 import OnlinePaymentsKit
 
 struct AppConstants {
-    static let applicationIdentifier = "SwiftUI Example Application/v1.0.3"
+    static let applicationIdentifier = "SwiftUI Example Application/v1.2.0"
 
     // Constants used for saving input to UserDefaults
     static let clientSessionId = "ClientSessionId"
@@ -21,7 +21,7 @@ struct AppConstants {
     static let currencyCode = "CurrencyCode"
 
     // Apple Pay identifier
-    static let applePayIdentifier = "302"
+    static let applePayIdentifier = 302
 
     // Constants used to identify Card product fields
     static let cardField = "cardNumber"

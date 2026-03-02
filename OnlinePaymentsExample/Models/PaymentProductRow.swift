@@ -9,6 +9,6 @@ import UIKit
 struct PaymentProductRow {
     let name: String
     let accountOnFileIdentifier: String?
-    let paymentProductIdentifier: String
+    let paymentProductIdentifier: Int
     let logo: UIImage?
 }

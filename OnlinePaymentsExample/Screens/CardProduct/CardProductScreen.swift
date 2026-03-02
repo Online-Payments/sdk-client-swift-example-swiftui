@@ -47,8 +47,7 @@ struct CardProductScreen: View {
                                                  trailingImage:
                                     .image(
                                         Image(
-                                            uiImage: viewModel.paymentItem?.displayHints[0].logoImage ??
-                                            UIImage()
+                                            uiImage: viewModel.paymentProduct?.getLogoImage() ?? UIImage(),
                                         )
                                     ),
                                                  placeholder:
@@ -88,8 +87,8 @@ struct CardProductScreen: View {
                                                         set: { viewModel.onExpiryDateFieldChanged(newValue: $0) }
                                                      ) :
                                         .constant(
-                                            viewModel.accountOnFile?.attributes.value(
-                                                forField: AppConstants.expiryDateField
+                                            viewModel.accountOnFile?.getValue(
+                                                id: AppConstants.expiryDateField
                                             ) ?? ""
                                         ),
                                                      accentColor:
@@ -152,8 +151,8 @@ struct CardProductScreen: View {
                                                     set: { viewModel.onCardHolderNameFieldChanged(newValue: $0) }
                                                  ) :
                                     .constant(
-                                        viewModel.accountOnFile?.attributes.value(
-                                            forField: AppConstants.cardHolderField
+                                        viewModel.accountOnFile?.getValue(
+                                            id: AppConstants.cardHolderField
                                         ) ?? ""
                                     ),
                                                  accentColor:
@@ -187,8 +186,8 @@ struct CardProductScreen: View {
                     Spacer()
 
                     NavigationLink("", isActive: $viewModel.showEndScreen) {
-                        if let preparedPaymentRequest = viewModel.preparedPaymentRequest {
-                            EndScreen(viewModel: EndScreen.ViewModel(preparedPaymentRequest: preparedPaymentRequest))
+                        if let encryptedRequest = viewModel.encryptedRequest {
+                            EndScreen(viewModel: EndScreen.ViewModel(encryptedRequest: encryptedRequest))
                         } else {
                             // This should not never happen since showEndScreen is only true
                             // when preparedPaymentRequest has value
@@ -239,25 +238,26 @@ struct CardProductScreen: View {
 
 // MARK: - Previews
 #Preview {
-    let session = Session(
+    let sessionData = SessionData(
         clientSessionId: "clientSessionId",
         customerId: "customerId",
-        baseURL: "baseURL",
-        assetBaseURL: "assetBaseURL",
-        appIdentifier: "appIdentifier"
+        clientApiUrl: "clientApiUrl",
+        assetUrl: "assetURL",
     )
+    
+    let configuration = SdkConfiguration(appIdentifier: "appIdentifier")
+    
+    let sdk = try! OnlinePaymentsSdk(sessionData: sessionData, configuration: configuration)
 
-    let amountOfMoney = AmountOfMoney(totalAmount: 10, currencyCode: "EUR")
-
+    let amountOfMoney = AmountOfMoney(amount: 10, currencyCode: "EUR")
     let paymentContext = PaymentContext(amountOfMoney: amountOfMoney, isRecurring: false, countryCode: "NL")
 
-    return CardProductScreen(
-        viewModel:
-            CardProductScreen.ViewModel(
-                session: session,
-                paymentContext: paymentContext,
-                paymentItem: nil,
-                accountOnFile: nil
-            )
+    let viewModel = CardProductScreen.ViewModel(
+        sdk: sdk,
+        paymentContext: paymentContext,
+        paymentProduct: nil,
+        accountOnFile: nil
     )
+    
+    CardProductScreen(viewModel: viewModel)
 }

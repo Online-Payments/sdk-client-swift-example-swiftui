@@ -33,12 +33,12 @@ struct EndScreen: View {
                         VStack(alignment: .leading) {
                             Text("EncryptedFieldsHeader".localized)
                                 .bold()
-                            Text(viewModel.preparedPaymentRequest?.encryptedFields ?? "")
+                            Text(viewModel.encryptedRequest?.encryptedCustomerInput ?? "")
                         }
                         VStack(alignment: .leading) {
                             Text("EncryptedClientMetaInfoHeader".localized)
                                 .bold()
-                            Text(viewModel.preparedPaymentRequest?.encodedClientMetaInfo ?? "")
+                            Text(viewModel.encryptedRequest?.encodedClientMetaInfo ?? "")
                         }
                     }
                 }
@@ -74,5 +74,5 @@ struct EndScreen: View {
 
 // MARK: - Previews
 #Preview {
-    EndScreen(viewModel: EndScreen.ViewModel(preparedPaymentRequest: nil))
+    EndScreen(viewModel: EndScreen.ViewModel(encryptedRequest: nil))
 }

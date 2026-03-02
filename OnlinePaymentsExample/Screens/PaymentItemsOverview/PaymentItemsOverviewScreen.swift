@@ -49,17 +49,17 @@ struct PaymentItemsOverviewScreen: View {
                 NavigationLink("", isActive: $viewModel.showCardProductScreen) {
                     CardProductScreen(
                         viewModel: .init(
-                            session: viewModel.session,
+                            sdk: viewModel.sdk,
                             paymentContext: viewModel.paymentContext,
-                            paymentItem: viewModel.selectedPaymentItem,
+                            paymentProduct: viewModel.selectedPaymentProduct,
                             accountOnFile: viewModel.selectedAccountOnFile
                         )
                     )
                 }
 
                 NavigationLink("", isActive: $viewModel.showSuccessScreen) {
-                    if let preparedPaymentRequest = viewModel.preparedPaymentRequest {
-                        EndScreen(viewModel: EndScreen.ViewModel(preparedPaymentRequest: preparedPaymentRequest))
+                    if let encryptedRequest = viewModel.encryptedRequest {
+                        EndScreen(viewModel: EndScreen.ViewModel(encryptedRequest: encryptedRequest))
                     } else {
                         // This should not never happen since showEndScreen is only true
                         // when preparedPaymentRequest has value

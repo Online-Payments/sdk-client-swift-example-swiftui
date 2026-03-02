@@ -28,23 +28,23 @@ extension PaymentItemsOverviewScreen {
         private var summaryItems: [PKPaymentSummaryItem] = []
         private var authorizationViewController: PKPaymentAuthorizationViewController?
 
-        var selectedPaymentItem: PaymentItem?
+        var selectedPaymentProduct: PaymentProduct?
         var selectedAccountOnFile: AccountOnFile?
         var hasAccountsOnFile: Bool = false
-        var preparedPaymentRequest: PreparedPaymentRequest?
+        var encryptedRequest: EncryptedRequest?
 
-        let session: Session
+        let sdk: OnlinePaymentsSdk
         let paymentContext: PaymentContext
 
         // MARK: - Init
-        init(session: Session, paymentContext: PaymentContext, paymentItems: PaymentItems) {
-            self.session = session
+        init(sdk: OnlinePaymentsSdk, paymentContext: PaymentContext, basicPaymentProducts: BasicPaymentProducts) {
+            self.sdk = sdk
             self.paymentContext = paymentContext
-            self.hasAccountsOnFile = paymentItems.hasAccountsOnFile
+            self.hasAccountsOnFile = !basicPaymentProducts.accountsOnFile.isEmpty
 
             super.init()
 
-            prepareItems(paymentItems: paymentItems)
+            prepareItems(basicPaymentProducts: basicPaymentProducts)
         }
 
         // MARK: - Helpers
@@ -68,68 +68,61 @@ extension PaymentItemsOverviewScreen {
 
             isLoading = true
 
-            session.paymentProduct(
+            sdk.paymentProduct(
                 withId: item.paymentProductIdentifier,
-                context: paymentContext,
+                paymentContext: paymentContext,
                 success: { paymentProduct in
-                    if item.paymentProductIdentifier.isEqual(AppConstants.applePayIdentifier) {
+                    if item.paymentProductIdentifier == AppConstants.applePayIdentifier {
                         self.isLoading = false
                         self.showApplePayPaymentItem(paymentProduct: paymentProduct)
                     } else {
                         self.isLoading = false
-
-                        if paymentProduct.fields.paymentProductFields.count > 0 {
-                            self.selectedAccountOnFile =
-                                isAccountOnFile ?
-                                    paymentProduct.accountOnFile(withIdentifier: item.accountOnFileIdentifier ?? "") :
-                                    nil
-                            self.selectedPaymentItem = paymentProduct
-                            self.show(paymentItem: paymentProduct)
-                        } else {
-                            self.showBottomSheet(text: "ProductNotAvailable".localized)
+                        
+                        if !paymentProduct.fields.isEmpty {
+                            self.selectedAccountOnFile = isAccountOnFile ? paymentProduct.accountOnFile(withIdentifier: item.accountOnFileIdentifier ?? "") : nil
+                            self.selectedPaymentProduct = paymentProduct
+                            self.show(paymentProduct: paymentProduct)
                         }
                     }
+                    
                 },
                 failure: { error in
                     self.showAlert(text: error.localizedDescription)
                     self.isLoading = false
-                },
-                apiFailure: { errorResponse in
-                    self.showAlert(text: errorResponse.message)
-                    self.isLoading = false
-                }
-            )
+                })
         }
 
-        private func show(paymentItem: PaymentItem) {
-            if (paymentItem as? PaymentProduct)?.paymentMethod == "card" {
+        private func show(paymentProduct: PaymentProduct) {
+            if paymentProduct.paymentMethod == "card" {
                 self.showCardProductScreen = true
             } else {
                 self.showBottomSheet(text: "ProductNotAvailable".localized)
             }
         }
 
-        private func prepareItems(paymentItems: PaymentItems) {
+        private func prepareItems(basicPaymentProducts: BasicPaymentProducts) {
             if hasAccountsOnFile {
                 self.accountOnFileRows =
-                    generateRowsFrom(accountsOnFile: paymentItems.accountsOnFile, paymentItems: paymentItems)
+                    generateRowsFrom(accountsOnFile: basicPaymentProducts.accountsOnFile, basicPaymentProducts: basicPaymentProducts)
             }
-            self.paymentProductRows = generateRowsFrom(paymentItems: paymentItems)
+            self.paymentProductRows = generateRowsFrom(basicPaymentProducts: basicPaymentProducts)
         }
 
-        private func generateRowsFrom(paymentItems: PaymentItems) -> [PaymentProductRow] {
+        private func generateRowsFrom(basicPaymentProducts: BasicPaymentProducts) -> [PaymentProductRow] {
             var items: [PaymentProductRow] = []
 
-            for paymentItem in paymentItems.paymentItems.sorted(by: { paymentItemA, paymentItemB in
-                return paymentItemA.displayHints[0].displayOrder < paymentItemB.displayHints[0].displayOrder
-            }) {
-                let paymentProductLabel = paymentItem.displayHints[0].label ?? "UnknownProductLabel".localized
+            for product in basicPaymentProducts.paymentProducts.sorted(by: { $0.displayOrder < $1.displayOrder}) {
+                guard let id = product.id else {
+                    continue
+                }
+                
                 let row = PaymentProductRow(
-                    name: paymentProductLabel,
+                    name: product.label ?? "",
                     accountOnFileIdentifier: "",
-                    paymentProductIdentifier: paymentItem.identifier,
-                    logo: paymentItem.displayHints[0].logoImage
+                    paymentProductIdentifier: id,
+                    logo: product.getLogoImage()
                 )
+                
                 items.append(row)
             }
 
@@ -138,32 +131,24 @@ extension PaymentItemsOverviewScreen {
 
         private func generateRowsFrom(
             accountsOnFile: [AccountOnFile],
-            paymentItems: PaymentItems
+            basicPaymentProducts: BasicPaymentProducts
         ) -> [PaymentProductRow] {
             var items: [PaymentProductRow] = []
 
-            for accountOnFile in accountsOnFile.sorted(by: { (accountOnFileA, accountOnFileB) -> Bool in
-                let paymentItemA =
-                    paymentItems.paymentItem(
-                        withIdentifier: accountOnFileA.paymentProductIdentifier
-                    )?.displayHints[0].displayOrder ?? Int.max
-                let paymentItemB =
-                    paymentItems.paymentItem(
-                        withIdentifier: accountOnFileB.paymentProductIdentifier
-                    )?.displayHints[0].displayOrder ?? Int.max
-
-                return paymentItemA < paymentItemB
-            }) {
-
-                if let product = paymentItems.paymentItem(withIdentifier: accountOnFile.paymentProductIdentifier) {
-                    let row = PaymentProductRow(
-                        name: accountOnFile.label,
-                        accountOnFileIdentifier: accountOnFile.identifier,
-                        paymentProductIdentifier: accountOnFile.paymentProductIdentifier,
-                        logo: product.displayHints[0].logoImage
-                    )
-                    items.append(row)
+            for accountOnFile in accountsOnFile {
+                let productId = accountOnFile.paymentProductId
+                
+                guard let product = basicPaymentProducts.paymentProduct(withId: productId) else {
+                    continue
                 }
+                
+                let row = PaymentProductRow(
+                    name: accountOnFile.label ?? "",
+                    accountOnFileIdentifier: accountOnFile.id,
+                    paymentProductIdentifier: productId,
+                    logo: product.getLogoImage()
+                )
+                items.append(row)
             }
             return items
         }
@@ -260,7 +245,7 @@ extension PaymentItemsOverviewScreen {
             //
             // ***************************************************************************
 
-            let total = context.amountOfMoney.totalAmount
+            let total = context.amountOfMoney.amount
 
             var summaryItems = [PKPaymentSummaryItem]()
 
@@ -284,9 +269,9 @@ extension PaymentItemsOverviewScreen {
         ) {
             isLoading = true
 
-            self.session.prepare(
+            sdk.encryptPaymentRequest(
                 paymentRequest,
-                success: { preparedPaymentRequest in
+                success: { encryptedRequest in
                     self.isLoading = false
 
                     // ***************************************************************************
@@ -295,18 +280,12 @@ extension PaymentItemsOverviewScreen {
                     // be provided via the S2S Create Payment API, using field `encryptedCustomerInput`.
                     //
                     // ***************************************************************************
-                    self.preparedPaymentRequest = preparedPaymentRequest
+                    self.encryptedRequest = encryptedRequest
                     success?()
                     self.showSuccessScreen = true
                 }, failure: { error in
                     self.isLoading = false
                     self.showAlert(text: error.localizedDescription)
-
-                    failure?()
-                },
-                apiFailure: { errorResponse in
-                    self.isLoading = false
-                    self.showAlert(text: errorResponse.message)
 
                     failure?()
                 }
@@ -352,13 +331,21 @@ extension PaymentItemsOverviewScreen {
                     }
 
                     let request = PaymentRequest(paymentProduct: applePayPaymentProduct)
+                    
                     guard let paymentDataString =
                             String(data: payment.token.paymentData, encoding: String.Encoding.utf8) else {
                         completion(.failure)
                         return
                     }
-                    request.setValue(forField: "encryptedPaymentData", value: paymentDataString)
-                    request.setValue(forField: "transactionId", value: payment.token.transactionIdentifier)
+
+                    do {
+                        try request.field(id: "encryptedPaymentData").setValue(value: paymentDataString)
+                        try request.field(id: "transactionId").setValue(value: payment.token.transactionIdentifier)
+                    } catch {
+                        completion(.failure)
+                        
+                        return
+                    }
 
                     self.didSubmitPaymentRequest(
                         request,

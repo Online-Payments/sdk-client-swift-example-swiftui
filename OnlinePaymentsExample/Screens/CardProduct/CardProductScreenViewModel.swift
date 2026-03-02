@@ -9,7 +9,7 @@ import OnlinePaymentsKit
 import SwiftUI
 
 extension CardProductScreen {
-
+    
     // swiftlint: disable type_body_length
     class ViewModel: ObservableObject {
 
@@ -23,8 +23,8 @@ extension CardProductScreen {
         private let cardFieldLimit: Int = 6
 
         var accountOnFile: AccountOnFile?
-        var paymentItem: PaymentItem?
-        var preparedPaymentRequest: PreparedPaymentRequest?
+        var paymentProduct: PaymentProduct?
+        var encryptedRequest: EncryptedRequest?
 
         // MARK: - State
         var hasCardField: Bool = false
@@ -59,19 +59,19 @@ extension CardProductScreen {
         @Published var liveValidationEnabled: Bool = false
         @Published var payIsActive: Bool = false
 
-        private let session: Session
+        private let sdk: OnlinePaymentsSdk
         private let paymentContext: PaymentContext
 
         // MARK: - Init
         init(
-            session: Session,
+            sdk: OnlinePaymentsSdk,
             paymentContext: PaymentContext,
-            paymentItem: PaymentItem?,
+            paymentProduct: PaymentProduct?,
             accountOnFile: AccountOnFile?
         ) {
-            self.session = session
+            self.sdk = sdk
             self.paymentContext = paymentContext
-            self.paymentItem = paymentItem
+            self.paymentProduct = paymentProduct
             self.accountOnFile = accountOnFile
 
             self.configurePaymentItemFields()
@@ -83,7 +83,7 @@ extension CardProductScreen {
             self.setFieldValue(value: newValue, forField: self.cardField, updatePaymentRequestFieldValues: true)
 
             evaluatePayButton()
-            if self.liveValidationEnabled {
+            if self.liveValidationEnabled || newValue.isEmpty == false {
                 self.validateCard()
             }
 
@@ -100,7 +100,7 @@ extension CardProductScreen {
             self.setFieldValue(value: newValue, forField: self.expiryDateField, updatePaymentRequestFieldValues: true)
 
             evaluatePayButton()
-            if self.liveValidationEnabled {
+            if self.liveValidationEnabled || newValue.isEmpty == false {
                 self.validateExpiryDate()
             }
         }
@@ -109,7 +109,7 @@ extension CardProductScreen {
             self.setFieldValue(value: newValue, forField: self.cvvField, updatePaymentRequestFieldValues: true)
 
             evaluatePayButton()
-            if self.liveValidationEnabled {
+            if self.liveValidationEnabled || newValue.isEmpty == false {
                 self.validateCVV()
             }
         }
@@ -118,7 +118,7 @@ extension CardProductScreen {
             self.setFieldValue(value: newValue, forField: self.securityCodeField, updatePaymentRequestFieldValues: true)
 
             evaluatePayButton()
-            if self.liveValidationEnabled {
+            if self.liveValidationEnabled || newValue.isEmpty == false {
                 self.validateSecurityCode()
             }
         }
@@ -127,7 +127,7 @@ extension CardProductScreen {
             self.setFieldValue(value: newValue, forField: self.cardHolderField, updatePaymentRequestFieldValues: true)
 
             evaluatePayButton()
-            if self.liveValidationEnabled {
+            if self.liveValidationEnabled || newValue.isEmpty == false {
                 self.validateCardHolderName()
             }
         }
@@ -138,7 +138,7 @@ extension CardProductScreen {
             forField paymentProductField: PaymentProductField?,
             updatePaymentRequestFieldValues: Bool
         ) {
-            let fieldId = paymentProductField?.identifier ?? ""
+            let fieldId = paymentProductField?.id ?? ""
 
             displayedValues[fieldId] = value
             if updatePaymentRequestFieldValues {
@@ -147,7 +147,7 @@ extension CardProductScreen {
         }
 
         private func displayValue(forField paymentProductField: PaymentProductField?) -> String {
-            let fieldId = paymentProductField?.identifier ?? ""
+            let fieldId = paymentProductField?.id ?? ""
 
             guard let value = displayedValues[fieldId] else {
                 return ""
@@ -162,7 +162,7 @@ extension CardProductScreen {
                 return value
             }
 
-            return paymentProductField.applyMask(value: value)
+            return paymentProductField.applyMask(value: value) ?? value
         }
 
         private func unmaskedValue(forField paymentProductField: PaymentProductField?) -> String {
@@ -171,16 +171,14 @@ extension CardProductScreen {
                 return value
             }
 
-            let unmaskedValue = paymentProductField.removeMask(value: value)
-            return unmaskedValue
+            return paymentProductField.removeMask(value: value) ?? value
         }
 
         func getCreditCardValue() -> String {
             // If accountOnFile cardNumber value equals current input,
             // then return the (unmasked) value, otherwise the masked value.
             // This is to ensure that the accountOnFile cardNumber is displayed correctly.
-            if accountOnFile?.attributes.value(forField: AppConstants.cardField) ==
-               displayValue(forField: cardField) {
+            if accountOnFile?.getValue(id: AppConstants.cardField) == displayValue(forField: cardField) {
                 return displayValue(forField: cardField)
             } else {
                 return maskedValue(forField: cardField)
@@ -188,16 +186,20 @@ extension CardProductScreen {
         }
 
         private func fieldIsPartOfAccountOnFile(paymentProductFieldId: String) -> Bool {
-            return accountOnFile?.hasValue(forField: paymentProductFieldId) ?? false
+            return accountOnFile?.getValue(id: paymentProductFieldId) != nil
         }
 
         private func fieldIsReadOnly(paymentProductField: PaymentProductField?) -> Bool {
-            let fieldId = paymentProductField?.identifier ?? ""
+            let fieldId = paymentProductField?.id ?? ""
+            guard !fieldId.isEmpty else {
+                return false
+            }
+            
             if !fieldIsPartOfAccountOnFile(paymentProductFieldId: fieldId) {
                 return false
-            } else {
-                return accountOnFile?.isReadOnly(field: fieldId) ?? false
             }
+            
+            return !(accountOnFile?.isWritable(id: fieldId) ?? true)
         }
 
         func placeholder(forField paymentProductField: PaymentProductField?) -> String {
@@ -205,7 +207,7 @@ extension CardProductScreen {
                 return ""
             }
 
-            let field = self.paymentItem?.paymentProductField(withId: paymentProductField.identifier)
+            let field = self.paymentProduct?.field(id: paymentProductField.id)
 
             return field?.displayHints.label ?? ""
         }
@@ -261,7 +263,7 @@ extension CardProductScreen {
             }
 
             let errorMessageIds =
-                cardField.validateValue(value: self.unmaskedValue(forField: self.cardField))
+                cardField.validate(value: self.unmaskedValue(forField: self.cardField))
 
             cardError = getErrorMessage(validationErrors: errorMessageIds)
         }
@@ -269,12 +271,12 @@ extension CardProductScreen {
         private func validateExpiryDate() {
             guard let expiryDateField,
                   !fieldIsReadOnly(paymentProductField: expiryDateField)
-                    else {
+            else {
                 return
             }
 
             let errorMessageIds =
-                expiryDateField.validateValue(value: self.unmaskedValue(forField: self.expiryDateField))
+                expiryDateField.validate(value: self.unmaskedValue(forField: self.expiryDateField))
 
             expiryDateError = getErrorMessage(validationErrors: errorMessageIds)
         }
@@ -285,7 +287,7 @@ extension CardProductScreen {
                 return
             }
 
-            let errorMessageIds = cvvField.validateValue(value: self.unmaskedValue(forField: self.cvvField))
+            let errorMessageIds = cvvField.validate(value: self.unmaskedValue(forField: self.cvvField))
 
             cvvError = getErrorMessage(validationErrors: errorMessageIds)
         }
@@ -297,7 +299,7 @@ extension CardProductScreen {
             }
 
             let errorMessageIds =
-                securityCodeField.validateValue(
+                securityCodeField.validate(
                     value: self.unmaskedValue(forField: self.securityCodeField)
                 )
 
@@ -312,12 +314,12 @@ extension CardProductScreen {
             }
 
             let errorMessageIds =
-                cardHolderField.validateValue(value: self.unmaskedValue(forField: self.cardHolderField))
+                cardHolderField.validate(value: self.unmaskedValue(forField: self.cardHolderField))
 
             cardHolderError = getErrorMessage(validationErrors: errorMessageIds)
         }
 
-        private func getErrorMessage(validationErrors: [ValidationError]) -> String? {
+        private func getErrorMessage(validationErrors: [ValidationErrorMessage]) -> String? {
             return !validationErrors.isEmpty ?
                 ValidationErrorHandler.errorMessage(for: validationErrors[0], withCurrency: false) :
                 nil
@@ -325,7 +327,7 @@ extension CardProductScreen {
 
         // MARK: - General Helpers
         private func createPaymentRequest() -> PaymentRequest {
-            guard let paymentProduct = paymentItem as? PaymentProduct else {
+            guard let paymentProduct else {
                 fatalError("Invalid paymentItem")
             }
 
@@ -336,35 +338,39 @@ extension CardProductScreen {
                     tokenize: self.tokenize
                 )
 
-            let keys = Array(fieldValues.keys)
+            _ = Array(fieldValues.keys)
 
-            for key: String in keys {
-                if let value = fieldValues[key] {
-                    paymentRequest.setValue(forField: key, value: value)
+            do {
+                for (key, value) in fieldValues {
+                    try paymentRequest.field(id: key).setValue(value: value)
                 }
+                
+                return paymentRequest
+            } catch {
+                showAlert(text: error.localizedDescription)
+                
+                fatalError("Failed to set payment request filed values: \(error)")
             }
-
-            return paymentRequest
         }
 
         private func configurePaymentItemFields() {
-            guard let paymentItem else {
+            guard let paymentProduct else {
                 return
             }
 
-            self.cardField = paymentItem.paymentProductField(withId: AppConstants.cardField)
+            self.cardField = paymentProduct.field(id: AppConstants.cardField)
             if cardField != nil { self.hasCardField = true }
 
-            self.expiryDateField = paymentItem.paymentProductField(withId: AppConstants.expiryDateField)
+            self.expiryDateField = paymentProduct.field(id: AppConstants.expiryDateField)
             if expiryDateField != nil { self.hasExpiryDateField = true }
 
-            self.cvvField = paymentItem.paymentProductField(withId: AppConstants.cvvField)
+            self.cvvField = paymentProduct.field(id: AppConstants.cvvField)
             if cvvField != nil { self.hasCvvField = true }
 
-            self.securityCodeField = paymentItem.paymentProductField(withId: AppConstants.securityCodeField)
+            self.securityCodeField = paymentProduct.field(id: AppConstants.securityCodeField)
             if securityCodeField != nil { self.hasSecurityCodeField = true }
 
-            self.cardHolderField = paymentItem.paymentProductField(withId: AppConstants.cardHolderField)
+            self.cardHolderField = paymentProduct.field(id: AppConstants.cardHolderField)
             if cardHolderField != nil { self.hasCardHolderField = true }
         }
 
@@ -379,25 +385,25 @@ extension CardProductScreen {
         }
 
         private func setCreditCardFieldAccountOnFile(accountOnFile: AccountOnFile) {
-            let fieldId = cardField?.identifier ?? ""
-            let value = accountOnFile.maskedValue(forField: fieldId)
+            let fieldId = cardField?.id ?? ""
+            let value = accountOnFile.getValue(id: fieldId) ?? ""
             self.setFieldValue(value: value, forField: cardField, updatePaymentRequestFieldValues: false)
             // Always disable credit card field when using an account on file, the card number should never be modified
             cardFieldEnabled = false
         }
 
         private func setExpiryDateFieldAccountOnFile(accountOnFile: AccountOnFile) {
-            let fieldId = expiryDateField?.identifier ?? ""
-            let value = accountOnFile.maskedValue(forField: fieldId)
+            let fieldId = expiryDateField?.id ?? ""
+            let value = accountOnFile.getValue(id: fieldId) ?? ""
             self.setFieldValue(value: value, forField: expiryDateField, updatePaymentRequestFieldValues: false)
-            expiryDateFieldEnabled = !accountOnFile.isReadOnly(field: fieldId)
+            expiryDateFieldEnabled = accountOnFile.isWritable(id: fieldId)
         }
 
         private func setCardHolderFieldAccountOnFile(accountOnFile: AccountOnFile) {
-            let fieldId = cardHolderField?.identifier ?? ""
-            let value = accountOnFile.maskedValue(forField: fieldId)
+            let fieldId = cardHolderField?.id ?? ""
+            let value = accountOnFile.getValue(id: fieldId) ?? ""
             self.setFieldValue(value: value, forField: cardHolderField, updatePaymentRequestFieldValues: false)
-            cardHolderFieldEnabled = !accountOnFile.isReadOnly(field: fieldId)
+            cardHolderFieldEnabled = accountOnFile.isWritable(id: fieldId)
         }
 
         // MARK: - Actions
@@ -410,10 +416,11 @@ extension CardProductScreen {
                     expiryDateError == nil &&
                     cvvError == nil &&
                     securityCodeError == nil &&
-                    cardHolderError == nil else {
-                        liveValidationEnabled = true
-                        return
-                    }
+                    cardHolderError == nil
+            else {
+                liveValidationEnabled = true
+                return
+            }
 
             self.tokenize = rememberPaymentDetails
 
@@ -423,9 +430,9 @@ extension CardProductScreen {
 
             self.isLoading = true
 
-            self.session.prepare(
+            sdk.encryptPaymentRequest(
                 paymentRequest,
-                success: { preparedPaymentRequest in
+                success: { encryptedRequest in
                     self.isLoading = false
 
                     // ***************************************************************************
@@ -434,24 +441,20 @@ extension CardProductScreen {
                     // be provided via the S2S Create Payment API, using field `encryptedCustomerInput`.
                     //
                     // ***************************************************************************
-                    self.preparedPaymentRequest = preparedPaymentRequest
+                    self.encryptedRequest = encryptedRequest
                     self.showEndScreen = true
                 },
                 failure: { error in
                     self.isLoading = false
                     self.showAlert(text: error.localizedDescription)
-                },
-                apiFailure: { errorResponse in
-                    self.isLoading = false
-                    self.showAlert(text: errorResponse.message)
                 }
             )
         }
 
         private func getIinDetails() {
-            session.iinDetails(
-                forPartialCreditCardNumber: self.unmaskedValue(forField: self.cardField),
-                context: paymentContext,
+            sdk.iinDetails(
+                forPartialCardNumber: self.unmaskedValue(forField: self.cardField),
+                paymentContext: paymentContext,
                 success: { iinDetailsResponse in
                     switch iinDetailsResponse.status {
                     case .supported:
@@ -464,32 +467,29 @@ extension CardProductScreen {
                 },
                 failure: { error in
                     self.showAlert(text: error.localizedDescription)
-                },
-                apiFailure: { errorResponse in
-                    self.showAlert(text: errorResponse.message)
                 }
             )
         }
 
-        private func switchToPaymentProduct(paymentProductId: String?) {
-            if let paymentProductId,
-               paymentProductId != paymentItem?.identifier {
-                session.paymentProduct(
-                    withId: paymentProductId,
-                    context: paymentContext,
-                    success: { paymentProduct in
-                        self.paymentItem = paymentProduct
-                        self.cardError = nil
-                        self.configurePaymentItemFields()
-                    },
-                    failure: { error in
-                        self.showAlert(text: error.localizedDescription)
-                    },
-                    apiFailure: { errorResponse in
-                        self.showAlert(text: errorResponse.message)
-                    }
-                )
+        private func switchToPaymentProduct(paymentProductId: Int?) {
+            guard let paymentProductId else {
+                return
             }
+            
+            if paymentProductId == self.paymentProduct?.id {
+                return
+            }
+            
+            sdk.paymentProduct(
+                withId: paymentProductId,
+                paymentContext: paymentContext,
+                success: { paymentProduct in
+                    self.paymentProduct = paymentProduct
+                    self.cardError = nil
+                    self.configurePaymentItemFields()
+                }, failure: { error in
+                    self.showAlert(text: error.localizedDescription)
+                })
         }
 
         private func showAlert(text: String) {

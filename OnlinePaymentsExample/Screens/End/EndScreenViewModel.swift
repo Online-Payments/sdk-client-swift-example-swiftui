@@ -15,16 +15,16 @@ extension EndScreen {
         // MARK: - Properties
         @Published var showEncryptedFields: Bool = false
 
-        var preparedPaymentRequest: PreparedPaymentRequest?
+        var encryptedRequest: EncryptedRequest?
 
         // MARK: - Init
-        init(preparedPaymentRequest: PreparedPaymentRequest?) {
-            self.preparedPaymentRequest = preparedPaymentRequest
+        init(encryptedRequest: EncryptedRequest?) {
+            self.encryptedRequest = encryptedRequest
         }
 
         // MARK: - Functions
         func copyToClipboard() {
-            UIPasteboard.general.string = self.preparedPaymentRequest?.encryptedFields ?? ""
+            UIPasteboard.general.string = self.encryptedRequest?.encryptedCustomerInput ?? ""
         }
 
         func returnToStart() {

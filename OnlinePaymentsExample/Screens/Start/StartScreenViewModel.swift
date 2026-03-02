@@ -47,9 +47,9 @@ extension StartScreen {
 
         private let emptyFieldError = "EmptyField".localized
 
-        var session: Session?
+        var sdk: OnlinePaymentsSdk?
         var paymentContext: PaymentContext?
-        var paymentItems: PaymentItems?
+        var basicPaymentProducts: BasicPaymentProducts?
 
         // MARK: - Init
         init() {
@@ -63,7 +63,7 @@ extension StartScreen {
             currencyCode = UserDefaults.standard.string(forKey: AppConstants.currencyCode) ?? ""
             merchantId = UserDefaults.standard.string(forKey: AppConstants.merchantId) ?? ""
 
-            showApplePayInput = UserDefaults.standard.bool(forKey: AppConstants.applePayIdentifier)
+            showApplePayInput = UserDefaults.standard.bool(forKey: String(AppConstants.applePayIdentifier))
         }
 
         // MARK: - Session functions
@@ -73,7 +73,7 @@ extension StartScreen {
             self.validateInput()
             self.initializeSession()
 
-            if session != nil {
+            if sdk != nil {
                 // Only attempt to retrieve payment items when Session was succesfully initialized
                 self.retrievePaymentItems()
             }
@@ -116,21 +116,26 @@ extension StartScreen {
             // to see the setup you should apply to your own app.
             // ***************************************************************************
 
-            session =
-                Session(
+            do {
+                let sessionData = SessionData(
                     clientSessionId: clientSessionId,
                     customerId: customerId,
-                    baseURL: clientApiUrl,
-                    assetBaseURL: assetUrl,
-                    appIdentifier: AppConstants.applicationIdentifier,
-                    loggingEnabled: false
+                    clientApiUrl: clientApiUrl,
+                    assetUrl: assetUrl
                 )
-
-            #if DEBUG
-                session?.loggingEnabled = true
-            #endif
-
-            self.saveInputToUserDefaults()
+                
+                let configuration = SdkConfiguration(appIdentifier: AppConstants.applicationIdentifier)
+                
+                sdk = try OnlinePaymentsSdk(
+                        sessionData: sessionData,
+                        configuration: configuration
+                    )
+                
+                self.saveInputToUserDefaults()
+            } catch {
+                self.showAlert(text: error.localizedDescription)
+                self.isLoading = false
+            }
         }
 
         private func retrievePaymentItems() {
@@ -146,7 +151,7 @@ extension StartScreen {
             //
             // ***************************************************************************
             let amountOfMoney = AmountOfMoney(
-                totalAmount: Int(amount) ?? 0,
+                amount: Int(amount) ?? 0,
                 currencyCode: currencyCode
             )
 
@@ -159,19 +164,15 @@ extension StartScreen {
 
             guard let paymentContext else { return }
 
-            session?.paymentItems(
-                for: paymentContext,
-                success: { paymentItems in
-                    self.paymentItems = paymentItems
+            sdk?.basicPaymentProducts(
+                forContext: paymentContext,
+                success: { products in
+                    self.basicPaymentProducts = products
                     self.isLoading = false
                     self.showPaymentItemsList = true
                 },
                 failure: { error in
                     self.showAlert(text: error.localizedDescription)
-                    self.isLoading = false
-                },
-                apiFailure: { errorResponse in
-                    self.showAlert(text: errorResponse.message)
                     self.isLoading = false
                 }
             )
@@ -233,7 +234,7 @@ extension StartScreen {
             UserDefaults.standard.set(currencyCode, forKey: AppConstants.currencyCode)
             UserDefaults.standard.set(merchantId, forKey: AppConstants.merchantId)
 
-            UserDefaults.standard.set(showApplePayInput, forKey: AppConstants.applePayIdentifier)
+            UserDefaults.standard.set(showApplePayInput, forKey: String(AppConstants.applePayIdentifier))
         }
 
         // MARK: - Field Validation

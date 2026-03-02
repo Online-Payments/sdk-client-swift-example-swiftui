@@ -28,14 +28,15 @@ struct StartScreen: View {
                         .padding()
                     }
                     NavigationLink("", isActive: $viewModel.showPaymentItemsList) {
-                        if let session = viewModel.session,
+                        if let sdk = viewModel.sdk,
                            let paymentContext = viewModel.paymentContext,
-                           let paymentItems = viewModel.paymentItems {
+                           let basicPaymentProducts = viewModel.basicPaymentProducts {
+                            
                             PaymentItemsOverviewScreen(
                                 viewModel: .init(
-                                    session: session,
+                                    sdk: sdk,
                                     paymentContext: paymentContext,
-                                    paymentItems: paymentItems
+                                    basicPaymentProducts: basicPaymentProducts
                                 )
                             )
                         } else {

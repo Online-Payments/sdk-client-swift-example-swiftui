@@ -144,6 +144,7 @@ struct ProductTextFieldView: View {
         errorText: nil,
         onEditingChanged: { _ in }, onCommit: {}
     )
+    //.previewLayout(.sizeThatFits)
 }
 
 #Preview("FieldWithText") {
@@ -153,6 +154,7 @@ struct ProductTextFieldView: View {
         errorText: nil,
         onEditingChanged: { _ in }, onCommit: {}
     )
+    //.previewLayout(.sizeThatFits)
 }
 
 #Preview("FieldWithTextAndError") {
@@ -162,6 +164,7 @@ struct ProductTextFieldView: View {
         errorText: "Error message",
         onEditingChanged: { _ in }, onCommit: {}
     )
+    //.previewLayout(.sizeThatFits)
 }
 
 #Preview("FieldWithTextAndErrorDarkMode") {
@@ -171,6 +174,7 @@ struct ProductTextFieldView: View {
         errorText: "Error message",
         onEditingChanged: { _ in }, onCommit: {}
     )
+    //.previewLayout(.sizeThatFits)
     .preferredColorScheme(.dark)
 }
 
@@ -184,4 +188,5 @@ struct ProductTextFieldView: View {
         """,
         onEditingChanged: { _ in }, onCommit: {}
     )
+    //.previewLayout(.sizeThatFits)
 }

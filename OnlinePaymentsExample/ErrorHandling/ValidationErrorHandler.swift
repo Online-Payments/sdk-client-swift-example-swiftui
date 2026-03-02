@@ -9,71 +9,19 @@ import OnlinePaymentsKit
 
 struct ValidationErrorHandler {
     static let errorMessageFormat = "ValidationErrors.%@"
-
-    static func errorMessage(for error: ValidationError, withCurrency: Bool) -> String {
-        let errorClass = error.self
-        var errorMessage: String
-        if let lengthError = errorClass as? ValidationErrorLength {
-            errorMessage = validationErrorLength(lengthError: lengthError)
-        } else if let rangeError = errorClass as? ValidationErrorRange {
-            errorMessage = validationErrorRange(rangeError: rangeError, withCurrency: withCurrency)
-
-        } else if !errorClass.errorMessage.isEmpty {
-            let errorMessageKey = String(format: errorMessageFormat, errorClass.errorMessage)
-            errorMessage = errorMessageKey.localized
-        } else {
-            errorMessage = ""
-            NSException(
-                name: NSExceptionName(rawValue: "InvalidValidationError".localized),
-                reason: "Validation error \(error) is invalid",
-                userInfo: nil
-            ).raise()
+    static func errorMessage(for error: ValidationErrorMessage, withCurrency: Bool) -> String {
+        if !error.errorMessage.isEmpty {
+            let key = String(format: errorMessageFormat, error.errorMessage)
+            
+            return (key.localized == key) ? error.errorMessage : key.localized
         }
-
-        return errorMessage
-    }
-
-    private static func validationErrorLength(lengthError: ValidationErrorLength) -> String {
-        var errorMessageKey: String
-
-        if lengthError.minLength == lengthError.maxLength {
-            errorMessageKey = String(format: errorMessageFormat, "length.exact")
-        } else if lengthError.minLength == 0 && lengthError.maxLength > 0 {
-            errorMessageKey = String(format: errorMessageFormat, "length.max")
-        } else if lengthError.minLength > 0 && lengthError.maxLength > 0 {
-            errorMessageKey = String(format: errorMessageFormat, "length.between")
-        } else {
-            // this case never happens
-            errorMessageKey = ""
+        
+        if let type = error.type, !type.isEmpty {
+            let key = String(format: errorMessageFormat, type)
+            
+            return (key.localized == key) ? type : key.localized
         }
-
-        let errorMessageValueWithPlaceholders = errorMessageKey.localized
-        let errorMessageValueWithPlaceholder =
-            errorMessageValueWithPlaceholders.replacingOccurrences(
-                of: "{maxLength}",
-                with: String(lengthError.maxLength)
-            )
-        return errorMessageValueWithPlaceholder.replacingOccurrences(
-                of: "{minLength}",
-                with: String(lengthError.minLength)
-            )
-    }
-
-    private static func validationErrorRange(rangeError: ValidationErrorRange, withCurrency: Bool) -> String {
-        let errorMessageKey = String(format: errorMessageFormat, "length.between")
-        let errorMessageValueWithPlaceholders = errorMessageKey.localized
-
-        var minString = ""
-        var maxString = ""
-        if withCurrency {
-            minString = String(format: "%.2f", Double(rangeError.minValue) / 100)
-            maxString = String(format: "%.2f", Double(rangeError.maxValue) / 100)
-        } else {
-            minString = "\(Int(rangeError.minValue))"
-            maxString = "\(Int(rangeError.maxValue))"
-        }
-        let errorMessageValueWithPlaceholder =
-            errorMessageValueWithPlaceholders.replacingOccurrences(of: "{maxValue}", with: String(maxString))
-        return errorMessageValueWithPlaceholder.replacingOccurrences(of: "{minValue}", with: String(minString))
+        
+        return ""
     }
 }
