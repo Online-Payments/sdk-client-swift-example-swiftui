@@ -1,14 +1,20 @@
-//
-// Do not remove or alter the notices in this preamble.
-// This software code is created for Online Payments on 07/02/2024
-// Copyright © 2024 Global Collect Services. All rights reserved.
-// 
+/*
+ * Do not remove or alter the notices in this preamble.
+ *
+ * This software is owned by Worldline and may not be be altered, copied, reproduced, republished, uploaded, posted, transmitted or distributed in any way, without the prior written consent of Worldline.
+ *
+ * Copyright © 2026 Worldline and/or its affiliates.
+ *
+ * All rights reserved. License grant and user rights and obligations according to the applicable license agreement.
+ *
+ * Please contact Worldline for questions regarding license and user rights.
+ */
 
 import UIKit
 import OnlinePaymentsKit
 
 struct AppConstants {
-    static let applicationIdentifier = "SwiftUI Example Application/v1.2.0"
+    static let applicationIdentifier = "SwiftUI Example Application/v1.2.1"
 
     // Constants used for saving input to UserDefaults
     static let clientSessionId = "ClientSessionId"
